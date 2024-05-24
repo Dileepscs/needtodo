@@ -1,0 +1,414 @@
+Step by Step Spring MVC Forms & Validations
+	-19Sep2022
+
+Step 1: Create a Spring Boot Project from  the Spring initializr https://start.spring.io
+and import in eclipse
+
+By default following dependencies will be added
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+Extra : Spring Boot Devtools
+A common feature of developing web applications is coding a change, restarting your application, and refreshing the browser to view the change. This entire process can eat up a lot of time. To speed up this refresh cycle, Spring Boot offers with a handy module known as spring-boot-devtools. 
+
+To add Boot DevTools manually put the following dependency
+		<dependency>  
+			<groupId>org.springframework.boot</groupId>  
+			<artifactId>spring-boot-devtools</artifactId>  
+			<scope>runtime</scope>  
+		</dependency> 
+
+
+Step 2: Add the following dependencies to support JSP with JSTL and validations
+
+Note : The default servlet container will not support JSP , so add the following dependency to support jsp
+
+		<dependency>
+   			 <groupId>org.apache.tomcat.embed</groupId>
+  			  <artifactId>tomcat-embed-jasper</artifactId>
+  			  <version>9.0.44</version>
+  			 <scope>provided</scope>
+		</dependency>
+
+		<dependency>
+   			 <groupId>javax.servlet</groupId>
+    	    		 <artifactId>jstl</artifactId>
+  			  <version>1.2</version>
+		</dependency>
+
+
+		<dependency>
+	    		<groupId>org.springframework.boot</groupId>
+    			<artifactId>spring-boot-starter-validation</artifactId>
+    			<version>3.0.5</version>
+		</dependency>
+
+		<dependency>
+   			    <groupId>javax.validation</groupId>
+    			<artifactId>validation-api</artifactId>
+    			<version>2.0.1.Final</version>
+		</dependency>
+
+
+Step 3: Add the model class 
+
+package com.springBoot.formsValidations.model;
+
+import java.util.Date;
+
+import javax.validation.constraints.*;
+
+import org.springframework.format.annotation.DateTimeFormat;
+
+public class User {
+    @Size(min = 3, max = 50)
+    private String username;
+     
+    @NotBlank
+    @Email(message = "Please enter a valid e-mail address")
+    private String email;
+     
+    @NotBlank
+    @Size(min = 8, max = 15)
+    private String password;
+     
+    @NotBlank
+    private String gender;
+     
+    @Size(max = 100)
+    private String note;
+     
+    @AssertTrue
+    private boolean married;
+     
+    @DateTimeFormat(pattern = "yyyy-mm-dd")
+    private Date birthday;
+     
+    @NotBlank
+    private String profession;
+ 
+    @Min(value = 20_000)
+    @Max(value = 200_000)
+    private long income;
+
+	public User() {
+		super();
+	}
+
+	public User(@Size(min = 3, max = 50) String name,
+			@NotBlank @Email(message = "Please enter a valid e-mail address") String email,
+			@NotBlank @Size(min = 8, max = 15) String password, @NotBlank String gender, @Size(max = 100) String note,
+			@AssertTrue boolean married, Date birthday, @NotBlank String profession,
+			@Min(20000) @Max(200000) long income) {
+		super();
+		this.username = name;
+		this.email = email;
+		this.password = password;
+		this.gender = gender;
+		this.note = note;
+		this.married = married;
+		this.birthday = birthday;
+		this.profession = profession;
+		this.income = income;
+	}
+
+	@Override
+	public String toString() {
+		return "User [username=" + username + ", email=" + email + ", password=" + password + ", gender=" + gender + ", note="
+				+ note + ", married=" + married + ", birthday=" + birthday + ", profession=" + profession + ", income="
+				+ income + "]";
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
+	public String getNote() {
+		return note;
+	}
+
+	public void setNote(String note) {
+		this.note = note;
+	}
+
+	public boolean isMarried() {
+		return married;
+	}
+
+	public void setMarried(boolean married) {
+		this.married = married;
+	}
+
+	public Date getBirthday() {
+		return birthday;
+	}
+
+	public void setBirthday(Date birthday) {
+		this.birthday = birthday;
+	}
+
+	public String getProfession() {
+		return profession;
+	}
+
+	public void setProfession(String profession) {
+		this.profession = profession;
+	}
+
+	public long getIncome() {
+		return income;
+	}
+
+	public void setIncome(long income) {
+		this.income = income;
+	}
+
+}
+
+
+Note that the @DateTimeFormat annotation comes from Spring framework’s API.
+By default, the validation error messages are defined by the Bean validation API. To override the default error message for a field, specify the message attribute for a constraint. 
+
+::Validations applied
+
+- name: must have 3 to 50 characters.
+
+- email: must not be blank and well-formed.
+
+- password: must not be blank and must contain 8 to 15 characters.
+
+- gender: must not be blank.
+
+- note: has less than 100 characters (0-100).
+
+- married: must be true (to demonstrate the @AssertTrue constraint).
+
+- birthday: must be in the date format yyyy-mm-dd.
+
+- profession: must be not blank.
+
+- income: must be within the range from 20K to 200K.
+
+Step 4: Write  Register Controller
+
+package com.springBoot.formsValidations.controller;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import javax.validation.Valid;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.springBoot.formsValidations.model.User;
+
+@Controller
+@RequestMapping(value = "/register")
+public class RegisterController {
+ 
+    //@RequestMapping(value = "/register",method = RequestMethod.GET)
+    //@GetMapping(value = "/register")
+    @RequestMapping(method = RequestMethod.GET)
+    public String viewRegistration(Map<String, Object> model) {
+        
+    	User userForm = new User();    
+        model.put("userForm", userForm);
+         
+        List<String> professionList = new ArrayList<>();
+        professionList.add("Developer");
+        professionList.add("Designer");
+        professionList.add("IT Manager");
+        
+        model.put("professionList", professionList);
+         
+        return "Registration";
+    }
+     
+    @RequestMapping(method = RequestMethod.POST)
+    public String processRegistration(@Valid @ModelAttribute("userForm") User user,BindingResult bindingResult,
+            Map<String, Object> model) {
+         
+        // implement your own registration logic here...
+         
+        // for testing purpose:
+        System.out.println("username: " + user.getUsername());
+        System.out.println("password: " + user.getPassword());
+        System.out.println("email: " + user.getEmail());
+        System.out.println("birth date: " + user.getBirthday());
+        System.out.println("profession: " + user.getProfession());
+         
+ 	if (bindingResult.hasErrors()) {       
+        	return "Registration";
+    	} else {
+       	 	return "RegistrationSuccess";
+    	}
+    }
+}
+
+Step 5: Add the configuration for jsp resolving in the application.properties
+
+\src\main\resources\application.properties
+
+spring.mvc.view.prefix: /WEB-INF/jsp/
+spring.mvc.view.suffix: .jsp
+
+Note: The above 2 lines instructs spring to look files for the return key words with jsp extn/suffix in the location/folder '/WEB-INF/jsp'.
+
+Step 6: Create registration.jsp
+
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Registration</title>
+</head>
+<body>
+	<div align="center">
+		<form:form action="register" method="post" modelAttribute="userForm">
+			<table border="0">
+				<tr>
+					<td colspan="2" align="center"><h2>Spring MVC Form Demo -
+							Registration</h2></td>
+				</tr>
+				<tr>
+					<td>User Name:</td>
+					<td><form:input path="username" /></td>
+				</tr>
+				<tr>
+					<td>Password:</td>
+					<td><form:password path="password" /></td>
+				</tr>
+				<tr>
+					<td>E-mail:</td>
+					<td><form:input path="email" /></td>
+				</tr>
+				<tr>
+					<td>Birthday (yyyy-mm-dd):</td>
+					<td><form:input path="birthday" /></td>
+				</tr>
+				<tr>
+					<td>Profession:</td>
+					<td><form:select path="profession" items="${professionList}" /></td>
+				</tr>
+				<tr>
+					<td colspan="2" align="center"><input type="submit"
+						value="Register" /></td>
+				</tr>
+			</table>
+		</form:form>
+	</div>
+</body>
+</html>
+
+Step 7: Write  registrationsuccess.jsp
+
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Registration Success</title>
+</head>
+<body>
+	<div align="center">
+		<table border="0">
+			<tr>
+				<td colspan="2" align="center"><h2>Registration Succeeded!</h2></td>
+			</tr>
+			<tr>
+				<td colspan="2" align="center">
+					<h3>Thank you for registering! Here's the review of your
+						details:</h3>
+				</td>
+			</tr>
+			<tr>
+				<td>User Name:</td>
+				<td>${userForm.username}</td>
+			</tr>
+			<tr>
+				<td>E-mail:</td>
+				<td>${userForm.email}</td>
+			</tr>
+			<tr>
+				<td>Birthday:</td>
+				<td>${userForm.birthday}</td>
+			</tr>
+			<tr>
+				<td>Profession:</td>
+				<td>${userForm.profession}</td>
+			</tr>
+
+		</table>
+	</div>
+</body>
+</html>
+
+
+Step 8: Extend the Application class from  SpringBootServletInitializer  like below
+
+@SpringBootApplication(scanBasePackages = "com.nkxgen.spring.boot.mvcforms.formvalidations1")
+public class Formvalidations1Application extends SpringBootServletInitializer {
+
+	 @Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+	        return builder.sources(Formvalidations1Application.class);
+	}
+	   
+	public static void main(String[] args) {
+		SpringApplication.run(Formvalidations1Application.class, args);
+	}
+
+}
+
+Step 9: Run and call the jsp in webpage
+
+

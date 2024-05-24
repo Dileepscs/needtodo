@@ -1,0 +1,317 @@
+Step by Step Spring ORM example using Hibernate & JPA
+	-20Sep2022
+
+=> 1. Create Dynamic Web Project
+
+=> 2. Convert into Maven Project
+
+=> 3. Add Spring ORM Maven dependencies
+
+Below is our final pom.xml file having Spring ORM dependencies. 
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.nkxgen.spring.orm1</groupId>
+  <artifactId>spring-orm1</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>war</packaging>
+  <name>spring-orm1</name>
+  <description>spring-orm1</description>
+  	<properties>
+		<!-- Generic properties -->
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<java.version>1.8</java.version>
+
+		<!-- SPRING & HIBERNATE / JPA -->
+		<spring.version>4.3.9.RELEASE</spring.version>
+		<hibernate.version>5.6.11.Final</hibernate.version>
+
+	</properties>
+  <dependencies>
+		<!-- LOG -->
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.17</version>
+		</dependency>
+
+		<!-- Spring -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>4.3.9.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-orm</artifactId>
+			<version>4.3.9.RELEASE</version>
+		</dependency>
+
+		<!-- JPA Vendor -->
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-entitymanager</artifactId>
+			<version>5.6.11.Final</version>
+		</dependency>
+
+		<!-- IN MEMORY Database and JDBC Driver -->
+		<dependency>
+			<groupId>hsqldb</groupId>
+			<artifactId>hsqldb</artifactId>
+			<version>1.8.0.7</version>
+		</dependency>
+
+	</dependencies>
+	
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <release>18</release>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.2.3</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+
+=> 4. Create Spring ORM Model Class
+
+We can use standard JPA annotations for mapping in our model beans because Hibernate provides JPA implementation.
+
+package com.nkxgen.spring.orm.model;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+
+
+@table(name="table")
+@Entity
+public class Employee {
+	
+	@Id    
+	private Integer empNo;
+	private Integer deptNo;
+	private String eName;
+	private String job;
+	private Double salary;
+	
+
+	public Employee() {
+	}
+
+	public Employee(Integer eno, Integer dno, String enm, String jb,Double sal) {
+		this.empNo = eno;
+		this.eName = enm;
+		this.job = jb;
+		this.salary = sal;
+		this.deptNo=dno;
+	}
+
+	public Integer getEmpNo() {
+		return empNo;
+	}
+
+	public void setEmpNo(Integer eno) {
+		this.empNo=eno;
+	}
+
+	public Integer getDeptNo() {
+		return deptNo;
+	}
+
+	public void setDeptNo(Integer dno) {
+		this.deptNo = dno;
+	}
+
+	public String getEName() {
+		return eName;
+	}
+
+	public void setEName(String enm) {
+		this.eName = enm;
+	}
+
+	public String getJob() {
+		return job;
+	}
+	public void setJob(String jb) {
+		this.job = jb;
+	}
+	
+	public Double getSalary() {
+		return salary;
+	}
+
+	public void setSalary(double sal) {
+		this.salary = sal;
+	}
+	
+	@Override
+	public String toString() {
+		return "Employee{" + "Emp No=" + empNo + ", deptNo=" + deptNo + ", EmpName='" + eName + '\'' + ", job='" + job
+				+ '\'' + '}';
+	}
+
+}
+
+We use @Entity and @Id JPA annotations to qualify our POJO as an Entity and to define it’s primary key.
+
+=> 5. Create Spring ORM DAO Class
+
+We create a very simple DAO class that provides persist and findALL methods.
+
+package com.nkxgen.spring.orm.dao;
+
+
+import java.util.List;
+import  com.nkxgen.spring.orm.model.Employee;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class EmpDAO {
+
+	@PersistenceContext
+	private EntityManager em;
+
+	public void persist(Employee emp) {
+		em.persist(emp);
+	}
+
+	public List<Employee> findAll() {
+		return em.createQuery("SELECT e FROM Employee e").getResultList();
+	}
+
+}
+
+
+@Component is Spring annotation that tell the Spring container that we can use this class through Spring IoC (Dependency Injection).
+
+We use JPA @PersistenceContext annotation that indicate dependency injection to an EntityManager. Spring injects a proper instance of EntityManager according to the spring.xml configuration.
+
+=> 6. Create Spring ORM Service Class
+
+Our simple service class has 2 write and 1 read methods - add, addAll and listAll.
+
+package com.nkxgen.spring.orm.service;
+
+import java.util.Collection;
+import java.util.List;
+
+import com.nkxgen.spring.orm.model.Employee;
+import com.nkxgen.spring.orm.dao.EmpDAO;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+@Component
+public class EmpService {
+
+	@Autowired
+	private EmpDAO edao;
+
+	@Transactional
+	public void add(Employee emp) {
+		edao.persist(emp);
+	}
+	
+	@Transactional
+	public void addAll(Collection<Employee> empList) {
+		for (Employee emp : empList) {
+			edao.persist(emp);
+		}
+	}
+
+	@Transactional(readOnly = true)
+	public List<Employee> listAll() {
+		return edao.findAll();
+
+	}
+
+}
+
+We use Spring @Autowired annotation to inject ProductDao in our service class.
+We want to use transaction management, so methods are annotated with @Transactional Spring annotation. The listAll method only reads the database so we set the @Transactional annotation to read-only for optimisation.
+
+=> 7. Create Spring ORM Bean Configuration XML
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="https://www.springframework.org/schema/beans" 
+	xmlns:p="https://www.springframework.org/schema/p"
+	xmlns:context="https://www.springframework.org/schema/context" 
+	xmlns:tx="https://www.springframework.org/schema/tx" 
+	xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+		https://www.springframework.org/schema/beans
+		https://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		https://www.springframework.org/schema/context
+		https://www.springframework.org/schema/context/spring-context-3.0.xsd
+		https://www.springframework.org/schema/tx
+		https://www.springframework.org/schema/tx/spring-tx.xsd
+		">
+	
+	<!-- Scans the classpath for annotated components that will be auto-registered as Spring beans -->
+	<context:component-scan base-package="com.nkxgen.spring.orm" />
+	<!-- Activates various annotations to be detected in bean classes e.g: @Autowired -->
+	<context:annotation-config />
+
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="org.hsqldb.jdbcDriver" />
+		<property name="url" value="jdbc:hsqldb:mem://productDb" />
+		<property name="username" value="sa" />
+		<property name="password" value="" />
+	</bean>
+	
+	<bean id="entityManagerFactory" 
+			class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean"
+			p:packagesToScan="com.nkxgen.spring.orm.model"
+            p:dataSource-ref="dataSource"
+			>
+		<property name="jpaVendorAdapter">
+			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+				<property name="generateDdl" value="true" />
+				<property name="showSql" value="true" />
+			</bean>
+		</property>
+	</bean>
+
+	<!-- Transactions -->
+	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+		<property name="entityManagerFactory" ref="entityManagerFactory" />
+	</bean>
+	<!-- enable the configuration of transactional behavior based on annotations -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+</beans>
+
+First we tell spring that we want to use classpath scanning for Spring components (Services, DAOs) rather than defining them one by one in spring xml. We have also enabled Spring annotation detection.
+
+Adding the datasource, that is currently HSQLDB in-memory database.
+
+We set up a JPA EntityManagerFactory that will used by the application to obtain an EntityManager. Spring supports 3 different ways to do this, we have used LocalContainerEntityManagerFactoryBean for full JPA capabilities. We set LocalContainerEntityManagerFactoryBean attributes as:
+
+packagesToScan attribute that points to our model classes package.
+
+datasource defined earlier in spring configuration file.
+
+jpaVendorAdapter as Hibernate and setting some hibernate properties.
+
+We create Spring PlatformTransactionManager instance as a JpaTransactionManager. This transaction manager is appropriate for applications that use a single JPA EntityManagerFactory for transactional data access.
+
+We enable the configuration of transactional behavior based on annotations, and we set the 
+transactionManager we created.
+
+=> 8. Create Controller
+
+=> 9. Create Input & Output JSPs
+

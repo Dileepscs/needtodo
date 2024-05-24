@@ -1,0 +1,198 @@
+Spring With Thymeleaf Step by Step
+	-22Sep2022
+
+
+Step 1: Add the following Dependencies
+
+	<!-- Spring Boot Thymeleaf dependencies -->	
+
+<dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-thymeleaf</artifactId>
+</dependency>
+
+:: Spring Boot Starter Parent
+
+Better to Include Parent to manage Versions
+
+<parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.0.5</version>
+</parent>
+
+
+The spring-boot-starter-parent project is a special starter project that provides default configurations for our application and a complete dependency tree to quickly build our Spring Boot project. It also provides default configurations for Maven plugins, such as maven-failsafe-plugin, maven-jar-plugin, maven-surefire-plugin, and maven-war-plugin.
+
+All Spring Boot projects use spring-boot-starter-parent as a parent in pom. xml file.
+
+Beyond that, it also inherits dependency management from spring-boot-dependencies, which is the parent to the spring-boot-starter-parent.
+
+Once we’ve declared the starter parent in our project, we can pull any dependency from the parent by just declaring it in our dependencies tag. We also don’t need to define versions of the dependencies; Maven will download jar files based on the version defined for the starter parent in the parent tag.
+
+For example, if we’re building a web project, we can add spring-boot-starter-web directly, and we don’t need to specify the version:
+
+<parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.0.5</version>
+</parent>
+
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-thymeleaf</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+</dependencies>
+
+For Non Boot Spring
+		<!-- Regular Spring Thymeleaf dependencies -->	
+
+   		    <dependency>   
+                     <groupId>org.thymeleaf</groupId>
+     		    <artifactId>thymeleaf-spring4</artifactId>
+     		    <version>3.0.15.RELEASE</version>
+   			 </dependency>
+
+   			    <dependency>
+     			 <groupId>nz.net.ultraq.thymeleaf</groupId>
+      			<artifactId>thymeleaf-layout-dialect</artifactId>
+      			<version>3.0.0</version>
+    		</dependency>
+
+=> Project structure for your idea
+
+Following is the final project structure with all the files we would create
+
+├── src
+│   └── main
+│       ├── java
+│       │   └── com
+│       │       └── nkxgen
+│       │           └── springboot
+│       │               └── view
+│       │                   ├── Application.java
+│       │                   └── SimpleController.java
+│       └── resources
+│           ├── static
+│           │   ├── css
+│           │   │   └── main.css
+│           │   └── js
+│           │       └── main.js
+│           ├── templates
+│           │   └── hello.html
+│           └── application.properties
+└── pom.xml
+
+
+Web controller classes are used for mapping user requests to Thymeleaf template files, would be created inside src/main/java
+
+Thymeleaf view template files would be created inside src/main/resources/templates
+
+CSS and JavaScript files would be created inside src/main/resources/static
+
+application.properties is a configuration file used by Spring Boot, would be created inside src/main/resources
+
+Application.java is a launch file for Spring Boot to start the application, would be created inside src/main/java
+
+
+Step 2: Add the following configurations in spring-servlet.xml
+
+Spring Boot provides default configuration for Thymeleaf engine. To change common values we need to override property in configuration file: application.properties or application.yml.
+
+
+=> For non boot appln
+
+    <bean id="templateResolver" class="org.thymeleaf.templateresolver.ServletContextTemplateResolver">
+   		  <property name="prefix" value="/WEB-INF/pages/" />
+   		  <property name="suffix" value=".html" />
+  		  <property name="templateMode" value="HTML5" />
+  		  <property name="cacheable" value="false" />
+	</bean>
+
+	<bean id="templateEngine" class="org.thymeleaf.spring4.SpringTemplateEngine">
+ 		   <property name="templateResolver" ref="templateResolver" />
+	</bean>
+
+	<bean class="org.thymeleaf.spring4.view.ThymeleafViewResolver">
+  		  <property name="templateEngine" ref="templateEngine" />
+	</bean>
+
+
+
+=> Application Configurations
+
+Create application.properties file inside src/main/resources to configure Spring MVC view resolver via the spring.mvc.view properties
+
+[application.properties]
+
+spring.thymeleaf.template-loader-path: classpath:/templates  
+spring.thymeleaf.suffix: .html  
+spring.thymeleaf.cache: false
+
+The spring.thymeleaf.template-loader-path property defines the path to Thymeleaf files, the spring.thymeleaf.suffix property defines the file extension we would like to use
+
+Under the hood, Spring Boot will auto-configure Spring MVC view resolver based on the above settings
+
+Step 3: Add the following thymleaf "*.html" file under templates
+
+Here’s the relevant section of the add-user.html file:
+
+<form action="#" th:action="@{/adduser}" th:object="${user}" method="post">
+    <label for="name">Name</label>
+    <input type="text" th:field="*{name}" id="name" placeholder="Name">
+    <span th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+    <label for="email">Email</label>
+    <input type="text" th:field="*{email}" id="email" placeholder="Email">
+    <span th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+    <input type="submit" value="Add User">   
+</form>
+
+
+Another Ex: EmployeesList.html 
+
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+
+  <head>
+    <title>Spring MVC view layer: Thymeleaf vs. JSP</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  </head>
+  
+ <BODY BGCOLOR="yellow">
+       <H1>Employees List through Spring-Thymleaf </H1>
+
+      <TABLE BORDER="1">
+      <TR>
+      <TH>Emp No</TH>
+      <TH>Name</TH>
+      <TH>Job</TH>
+      <TH>Salary</TH>
+      <TH>Dept No</TH>
+      </TR>
+     
+    <tr th:each="emp : ${elist}">
+        <td class="align-middle" th:text="${emp.empNo}"> </td>
+        <td class="align-middle" th:text="${emp.eName}"> </td>
+        <td class="align-middle" th:text="${emp.job}"></td>
+        <td class="align-middle" th:text="${emp.salary}"> </td>
+        <td class="align-middle" th:text="${emp.deptNo}"></td>
+    </tr>
+    
+    <tr th:if="${elist.isEmpty()}">
+    		<td class="text-center" colspan="3">No Records found. Add some...!</td>
+	</tr>
+     </TABLE>
+     </BODY>
+</html>
+
+

@@ -1,0 +1,608 @@
+Step by Step Spring Next ORM example using Hibernate & JPA
+	-24May2024
+
+---------refer the eclipse project for latest and working code
+
+=> 1. Create Dynamic Web Project
+
+=> 2. Convert into Maven Project
+
+=> 3. Add Spring ORM Maven dependencies
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>NextORM</groupId>
+  <artifactId>NextORM</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>war</packaging>
+  
+   	<!-- Add Spring Web,MVC & ORM dependencies -->
+	<dependencies>
+		
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-webmvc</artifactId>
+    <version>6.0.15</version>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-web</artifactId>
+    <version>6.0.20</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-orm -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-orm</artifactId>
+    <version>6.1.3</version>
+</dependency>
+
+
+    <!-- Hibernate EntityManager dependency -->
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-entitymanager</artifactId>
+        <version>5.6.12.Final</version> <!-- Replace with the desired version -->
+    </dependency>
+
+<!-- https://mvnrepository.com/artifact/jakarta.persistence/jakarta.persistence-api -->
+<dependency>
+    <groupId>jakarta.persistence</groupId>
+    <artifactId>jakarta.persistence-api</artifactId>
+    <version>3.1.0</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.springframework.data/spring-data-jpa -->
+<dependency>
+    <groupId>org.springframework.data</groupId>
+    <artifactId>spring-data-jpa</artifactId>
+    <version>3.3.0</version>
+</dependency>
+
+
+    <!-- Hibernate Validator if you need bean validation -->
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-validator</artifactId>
+        <version>6.0.20.Final</version> <!-- Replace with the desired version -->
+    </dependency>
+    
+    
+		
+<dependency>
+    <groupId>jakarta.servlet</groupId>
+    <artifactId>jakarta.servlet-api</artifactId>
+    <version>6.0.0</version>
+    <scope>provided</scope>
+</dependency>
+
+<dependency>
+    <groupId>jakarta.servlet.jsp</groupId>
+    <artifactId>jakarta.servlet.jsp-api</artifactId>
+    <version>3.1.1</version>
+    <scope>provided</scope>
+</dependency>
+
+
+<dependency>
+    <groupId>jakarta.servlet.jsp.jstl</groupId>
+    <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+    <version>3.0.0</version>
+</dependency>
+
+	<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.5.0</version>
+		</dependency>
+
+
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-jdbc</artifactId>
+    <version>6.0.10</version>
+</dependency>
+
+
+		
+	</dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <release>17</release>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.2.3</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+
+=> 4. Create Spring ORM Model Classes
+
+We can use standard JPA annotations for mapping in our model beans because Hibernate provides JPA implementation.
+
+package com.nkxgen.spring.orm.models;
+
+import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+public class Course {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String title;
+
+    @ManyToMany(mappedBy = "courses", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    private Set<Student> students = new HashSet<>();
+
+    // Constructors, getters, and setters
+    
+
+    // Default constructor
+    public Course() {
+    }
+
+    // Constructor with title
+    public Course(String title) {
+        this.title = title;
+    }
+
+    // Getters and setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public Set<Student> getStudents() {
+        return students;
+    }
+
+    public void setStudents(Set<Student> students) {
+        this.students = students;
+    }
+}
+
+We use @Entity and @Id JPA annotations to qualify our POJO as an Entity and to define it’s primary key.
+
+package com.nkxgen.spring.orm.models;
+
+import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+public class Student {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @JoinTable(
+        name = "student_course",
+        joinColumns = @JoinColumn(name = "student_id"),
+        inverseJoinColumns = @JoinColumn(name = "course_id")
+    )
+    private Set<Course> courses = new HashSet<>();
+
+    // Constructors, getters, and setters
+    // Default constructor
+    public Student() {
+    }
+
+    // Constructor with name
+    public Student(String name) {
+        this.name = name;
+    }
+
+    // Getters and setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Set<Course> getCourses() {
+        return courses;
+    }
+
+    public void setCourses(Set<Course> courses) {
+        this.courses = courses;
+    }
+    
+}
+
+
+=> 5. Create Repositories
+
+Use  builtin repository implementations instead of writing your own implementations
+
+package com.nkxgen.spring.orm.repositories;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.nkxgen.spring.orm.models.Course;
+
+public interface CourseRepository extends JpaRepository<Course, Long> {
+}
+
+
+package com.nkxgen.spring.orm.repositories;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.nkxgen.spring.orm.models.Student;
+
+public interface StudentRepository extends JpaRepository<Student, Long> {
+}
+
+
+=> 6. Create Spring Service class
+
+package com.nkxgen.spring.orm.services;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.nkxgen.spring.orm.models.Course;
+import com.nkxgen.spring.orm.models.Student;
+import com.nkxgen.spring.orm.repositories.CourseRepository;
+import com.nkxgen.spring.orm.repositories.StudentRepository;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+@Service
+public class StudentService {
+
+    @Autowired
+    private StudentRepository studentRepository;
+
+    @Autowired
+    private CourseRepository courseRepository;
+
+    /*
+     *    @Transactional
+    public void enrollStudentInCourse(Long studentId, Long courseId) {
+ 
+     */
+    @Transactional
+    public void enrollStudentInCourse() {
+    	
+    	// Create and  save some students and courses
+        Student student1 = new Student();
+        student1.setName("Bhaskar Batla");
+
+        Student student2 = new Student();
+        student2.setName("Kiranmai");
+
+        Course course1 = new Course();
+        course1.setTitle("CSE 101");
+
+        Course course2 = new Course();
+        course2.setTitle("ECE 101");
+    	
+        //Student student = studentRepository.findById(studentId).orElseThrow();
+        //Course course = courseRepository.findById(courseId).orElseThrow();
+        
+        studentRepository.save(student1);
+        studentRepository.save(student2);
+        courseRepository.save(course1);
+        courseRepository.save(course2);
+        
+        student1.getCourses().add(course1);
+        student2.getCourses().add(course2);
+        course1.getStudents().add(student1);
+        course2.getStudents().add(student2);
+
+    }
+    
+    public List<Student> findAll(){
+    	return new ArrayList<Student>();
+    }
+}
+
+
+@Service is Spring annotation that tell the Spring container that we can use this class through Spring IoC (Dependency Injection).
+
+We use JPA @PersistenceContext annotation that indicate dependency injection to an EntityManager. Spring injects a proper instance of EntityManager according to the spring.xml configuration.
+
+
+=> 6. Create configuration file to configrure the required programmatically
+
+import java.util.Properties;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+
+import jakarta.persistence.EntityManagerFactory;
+
+@Configuration
+@ComponentScan("com.nkxgen.spring.orm")
+@PropertySource("classpath:db.properties")
+@EnableJpaRepositories(basePackages = "com.nkxgen.spring.orm.repositories")
+public class AppConfig {
+
+	@Autowired
+	Environment environment;
+
+	private final String URL = "url";
+	private final String USER = "dbuser";
+	private final String DRIVER = "driver";
+	private final String PASSWORD = "dbpassword";
+	
+	@Bean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
+        LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+        em.setPersistenceUnitName("postgresPersistUnit");
+        em.setDataSource(dataSource());
+        em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
+        
+        //set the hibernate properties
+        em.setJpaProperties(hibernateProperties());
+        
+        return em;
+    }
+
+	@Bean
+	DataSource dataSource() {
+		DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource();
+		driverManagerDataSource.setUrl(environment.getProperty(URL));
+		driverManagerDataSource.setUsername(environment.getProperty(USER));
+		driverManagerDataSource.setPassword(environment.getProperty(PASSWORD));
+		driverManagerDataSource.setDriverClassName(environment.getProperty(DRIVER));
+		return driverManagerDataSource;
+	}
+	
+	 @Bean
+	public JpaTransactionManager transactionManager(EntityManagerFactory emf) {
+	        JpaTransactionManager transactionManager = new JpaTransactionManager();
+	        transactionManager.setEntityManagerFactory(emf);
+	        return transactionManager;
+	}
+	 
+	 private Properties hibernateProperties() {
+	        Properties properties = new Properties();
+	        properties.setProperty("hibernate.hbm2ddl.auto", "update");
+	        properties.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
+	        properties.setProperty("hibernate.show_sql", "true");
+	        properties.setProperty("hibernate.format_sql", "true");
+	        return properties;
+	 }
+	 
+}
+
+=> 7. Create Spring ORM Bean Configuration XML (spring-beans.xml)
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/mvc
+           http://www.springframework.org/schema/mvc/spring-mvc.xsd
+           http://www.springframework.org/schema/tx
+           http://www.springframework.org/schema/tx/spring-tx.xsd">
+           
+    <!-- Enable annotation-driven controllers, validation, etc. -->
+    <mvc:annotation-driven />
+
+    <!-- Scan the specified base package for Spring components -->
+    <context:component-scan base-package="com.nkxgen.spring.orm" />
+
+    <!-- Define the view resolver -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/views/" />
+        <property name="suffix" value=".jsp" />
+    </bean>
+
+  <!-- JPA EntityManagerFactory -->
+    <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <property name="persistenceUnitName" value="postgresPersistUnit" />
+        <property name="dataSource" ref="dataSource" />
+        <property name="jpaVendorAdapter">
+            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+                <property name="showSql" value="true" />
+                <property name="generateDdl" value="true" />
+                <property name="databasePlatform" value="org.hibernate.dialect.PostgreSQLDialect" />
+            </bean>
+        </property>
+    </bean>
+
+    <!-- DataSource -->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="org.postgresql.Driver" />
+        <property name="url" value="jdbc:postgresql://localhost:5433/postgres" />
+        <property name="username" value="postgres" />
+        <property name="password" value="abc1234$" />
+    </bean>
+
+    <!-- Transaction Manager -->
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory" />
+    </bean>
+
+
+</beans>
+
+First we tell spring that we want to use classpath scanning for Spring components (Services, DAOs) rather than defining them one by one in spring xml. We have also enabled Spring annotation detection.
+
+We set up a JPA EntityManagerFactory that will used by the application to obtain an EntityManager. Spring supports 3 different ways to do this, we have used LocalContainerEntityManagerFactoryBean for full JPA capabilities. We set LocalContainerEntityManagerFactoryBean attributes as:
+
+packagesToScan attribute that points to our model classes package.
+
+datasource defined earlier in spring configuration file.
+
+jpaVendorAdapter as Hibernate and setting some hibernate properties.
+
+We create Spring PlatformTransactionManager instance as a JpaTransactionManager. This transaction manager is appropriate for applications that use a single JPA EntityManagerFactory for transactional data access.
+
+We enable the configuration of transactional behavior based on annotations, and we set the 
+transactionManager we created.
+
+8. Add hibernate persistence configuration through the persistence.xml. Add this under META-INF under resources folder
+
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
+                                 http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
+             version="2.1">
+
+    <persistence-unit name="postgresPersistUnit" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <class>com.nkxgen.spring.orm.models.Student</class>
+        <class>com.nkxgen.spring.orm.models.Course</class>
+        <properties>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver"/>
+            <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://localhost:5433/postgres"/>
+            <property name="javax.persistence.jdbc.user" value="postgres"/>
+            <property name="javax.persistence.jdbc.password" value="abc1234$"/>
+        </properties>
+    </persistence-unit>
+
+=> 9. Create Controller
+
+package com.nkxgen.spring.orm;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.nkxgen.spring.orm.config.AppConfig;
+import com.nkxgen.spring.orm.models.Course;
+import com.nkxgen.spring.orm.models.Student;
+import com.nkxgen.spring.orm.services.StudentService;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+
+@Controller
+public class StudentController {
+	
+	StudentService stdService;
+	
+	@Autowired
+	public StudentController(StudentService ss) {
+		stdService=ss;
+	}
+
+	/**
+	 * selects the Add New Employee view to render by returning its name.
+	 */
+	@RequestMapping(value = "/stdlist", method = RequestMethod.GET)
+	public String getAllEmployees(Model model) {
+		System.out.println("Students List JSP Requested");
+
+		//get all employees from DAO
+		List<Student> stdList=stdService.findAll();
+		
+		//set it to the model
+		model.addAttribute("slist",stdList);
+		
+		//call the view
+		return "stdlist";
+	}
+	
+	@RequestMapping(value = "/enroll", method = RequestMethod.GET)
+	public String saveNewStudent(Model model) {
+		
+		System.out.println("Enroll Students in Courses");
+		
+		ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+
+        StudentService studentService = context.getBean(StudentService.class);
+
+             
+        studentService.enrollStudentInCourse();
+		return "enrollsuccess";
+	}
+
+	/*
+	Above method is supposed to be a post call like this
+
+	@RequestMapping(value = "/enroll", method = RequestMethod.POST)
+	public String saveNewStudent(Student std, Model model) {
+		
+		System.out.println("Enroll Students in Courses");
+		
+		ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+		
+        	StudentService studentService = context.getBean(StudentService.class);
+
+             
+        	studentService.enrollStudentInCourse(<std>);
+		return "enrollsuccess";
+	}
+	*/
+
+}
+	
+
+
+=> 9. Create Input & Output JSPs
+
+

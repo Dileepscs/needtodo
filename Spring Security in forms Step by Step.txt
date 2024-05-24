@@ -1,0 +1,234 @@
+Spring Security in forms Step by Step
+	-22Sep2022
+
+
+Step 1: Add the following Dependency 
+
+<dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+
+By default it imposes Spring security, and password will be auto generated. You can find the password
+printed in console.
+
+Step 2: You can configure user and password
+
+spring.security.user.name=nkxgen
+spring.security.user.password=nkxgen
+
+Step 3: Disabling Auto Configuration
+
+@SpringBootApplication(exclude = { SecurityAutoConfiguration.class })
+public class SpringBootSecurityApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SpringBootSecurityApplication.class, args);
+    }
+}
+
+Step 4: Explicit Configuration
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfiguration {
+
+    @Bean
+    public InMemoryUserDetailsManager userDetailsService(PasswordEncoder passwordEncoder) {
+        UserDetails user = User.withUsername("user")
+            .password(passwordEncoder.encode("password"))
+            .roles("USER")
+            .build();
+
+        UserDetails admin = User.withUsername("admin")
+            .password(passwordEncoder.encode("admin"))
+            .roles("USER", "ADMIN")
+            .build();
+
+        return new InMemoryUserDetailsManager(user, admin);
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+            .anyRequest()
+            .authenticated()
+            .and()
+            .httpBasic();
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        PasswordEncoder encoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
+        return encoder;
+    }
+}
+
+
+---JWT
+
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    // Details omitted  
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        // Enable CORS and disable CSRF
+        http = http.cors().and().csrf().disable();
+
+        // Set session management to stateless
+        http = http
+            .sessionManagement()
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .and();
+
+        // Set unauthorized requests exception handler
+        http = http
+            .exceptionHandling()
+            .authenticationEntryPoint(
+                (request, response, ex) -> {
+                    response.sendError(
+                        HttpServletResponse.SC_UNAUTHORIZED,
+                        ex.getMessage()
+                    );
+                }
+            )
+            .and();
+
+        // Set permissions on endpoints
+        http.authorizeRequests()
+            // Our public endpoints
+            .antMatchers("/api/public/**").permitAll()
+            .antMatchers(HttpMethod.GET, "/api/author/**").permitAll()
+            .antMatchers(HttpMethod.POST, "/api/author/search").permitAll()
+            .antMatchers(HttpMethod.GET, "/api/book/**").permitAll()
+            .antMatchers(HttpMethod.POST, "/api/book/search").permitAll()
+            // Our private endpoints
+            .antMatchers("/api/admin/user/**").hasRole(Role.USER_ADMIN)
+            .antMatchers("/api/author/**").hasRole(Role.AUTHOR_ADMIN)
+            .antMatchers("/api/book/**").hasRole(Role.BOOK_ADMIN)
+            .anyRequest().authenticated();
+
+        // Add JWT token filter
+        http.addFilterBefore(
+            jwtTokenFilter,
+            UsernamePasswordAuthenticationFilter.class
+        );
+    }
+
+    // Details omitted for brevity
+
+}
+
+
+
+The Spring Security framework defines the following annotations for web security:
+
+@PreAuthorize supports Spring Expression Language and is used to provide expression-based access control before executing the method.
+@PostAuthorize supports Spring Expression Language and is used to provide expression-based access control after executing the method (provides the ability to access the method result).
+@PreFilter supports Spring Expression Language and is used to filter the collection or arrays before executing the method based on custom security rules we define.
+@PostFilter supports Spring Expression Language and is used to filter the returned collection or arrays after executing the method based on custom security rules we define (provides the ability to access the method result).
+@Secured doesn’t support Spring Expression Language and is used to specify a list of roles on a method.
+@RolesAllowed doesn’t support Spring Expression Language and is the JSR 250’s equivalent annotation of the @Secured annotation.
+
+
+
+These annotations are disabled by default and can be enabled in our application as follows:
+
+
+
+@EnableWebSecurity
+@EnableGlobalMethodSecurity(
+    securedEnabled = true,
+    jsr250Enabled = true,
+    prePostEnabled = true
+)
+
+
+securedEnabled = true enables @Secured annotation.
+jsr250Enabled = true enables @RolesAllowed annotation.
+prePostEnabled = true enables @PreAuthorize, @PostAuthorize, @PreFilter, @PostFilter annotations.
+
+After enabling them, we can enforce role-based access policies on our API endpoints like this:
+
+@Api(tags = "UserAdmin")
+@RestController @RequestMapping(path = "api/admin/user")
+@RolesAllowed(Role.USER_ADMIN)
+public class UserAdminApi {
+
+	// Details omitted for brevity
+
+}
+
+@Api(tags = "Author")
+@RestController @RequestMapping(path = "api/author")
+public class AuthorApi {
+
+	// Details omitted for brevity
+
+	@RolesAllowed(Role.AUTHOR_ADMIN)
+	@PostMapping
+	public void create() { }
+
+	@RolesAllowed(Role.AUTHOR_ADMIN)
+	@PutMapping("{id}")
+	public void edit() { }
+
+	@RolesAllowed(Role.AUTHOR_ADMIN)
+	@DeleteMapping("{id}")
+	public void delete() { }
+
+	@GetMapping("{id}")
+	public void get() { }
+
+	@GetMapping("{id}/book")
+	public void getBooks() { }
+
+	@PostMapping("search")
+	public void search() { }
+
+}
+
+@Api(tags = "Book")
+@RestController @RequestMapping(path = "api/book")
+public class BookApi {
+
+	// Details omitted for brevity
+
+	@RolesAllowed(Role.BOOK_ADMIN)
+	@PostMapping
+	public BookView create() { }
+
+	@RolesAllowed(Role.BOOK_ADMIN)
+	@PutMapping("{id}")
+	public void edit() { }
+
+	@RolesAllowed(Role.BOOK_ADMIN)
+	@DeleteMapping("{id}")
+	public void delete() { }
+
+	@GetMapping("{id}")
+	public void get() { }
+
+	@GetMapping("{id}/author")
+	public void getAuthors() { }
+
+	@PostMapping("search")
+	public void search() { }
+
+}
+
+

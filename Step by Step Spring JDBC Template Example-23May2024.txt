@@ -1,0 +1,438 @@
+Step by Step Spring JDBC Template Example
+	- 23May2024
+
+---------refer the eclipse project for latest and working code
+
+=> 1. Create Dynamic Web Project
+
+=> 2. Convert into Maven Project
+
+=> 3. Add Spring ORM Maven dependencies
+
+We need following dependencies - spring-core, spring-context, spring-jdbc and postgresql. 
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.nkxgen.spring.jdbc</groupId>
+  <artifactId>spring-jdbc1</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>war</packaging>
+  <name>spring-jdbc1</name>
+  <description>spring jdbc example</description>
+  	<dependencies>
+
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.5.0</version>
+		</dependency>
+	
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-webmvc</artifactId>
+    <version>6.0.15</version>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-web</artifactId>
+    <version>6.0.20</version>
+</dependency>
+
+		
+<dependency>
+    <groupId>jakarta.servlet</groupId>
+    <artifactId>jakarta.servlet-api</artifactId>
+    <version>6.0.0</version>
+    <scope>provided</scope>
+</dependency>
+
+<dependency>
+    <groupId>jakarta.servlet.jsp</groupId>
+    <artifactId>jakarta.servlet.jsp-api</artifactId>
+    <version>3.1.1</version>
+    <scope>provided</scope>
+</dependency>
+
+
+<dependency>
+    <groupId>jakarta.servlet.jsp.jstl</groupId>
+    <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+    <version>3.0.0</version>
+</dependency>
+
+	<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.5.0</version>
+		</dependency>
+
+
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-jdbc</artifactId>
+    <version>6.0.10</version>
+</dependency>
+
+	</dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <release>18</release>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.2.3</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+
+
+=> 4. Create Spring DataSource Configuration
+
+Next step is to create spring configuration class to define DataSource bean. I am using java based configuration, you can also do this using spring bean configuration xml file.
+
+package com.nkxgen.spring.jdbc.config;
+
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
+@Configuration
+@ComponentScan("com.nkxgen.spring.jdbc")
+@PropertySource("classpath:database.properties")
+public class AppConfig {
+
+	@Autowired
+	Environment environment;
+
+	private final String URL = "url";
+	private final String USER = "dbuser";
+	private final String DRIVER = "driver";
+	private final String PASSWORD = "dbpassword";
+
+	@Bean
+	DataSource dataSource() {
+		DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource();
+		driverManagerDataSource.setUrl(environment.getProperty(URL));
+		driverManagerDataSource.setUsername(environment.getProperty(USER));
+		driverManagerDataSource.setPassword(environment.getProperty(PASSWORD));
+		driverManagerDataSource.setDriverClassName(environment.getProperty(DRIVER));
+		return driverManagerDataSource;
+	}
+}
+
+
+
+@Configuration – says that this class is configuration for Spring context.
+
+@ComponentScan(“com.nkxgen.spring.jdbc”)- specifies the package to scan for component classes.
+
+@PropertySource(“classpath:database.properties”)- says that properties will be read from database.properties file.
+
+=> 5. Create database.properties file is shown below.
+
+driver=org.postgresql.Driver
+url=jdbc:postgresql://localhost:5433/postgres
+dbuser=postgres
+dbpassword=abc1234$
+
+=> 6. Create Spring JDBC Model Classes
+
+Next step is to create model classes to map our database table.
+
+public class Employee {
+	private Integer empNo;
+	private Integer deptNo;
+	private String eName;
+	private String job;
+	private Double salary;
+	
+
+	public Employee() {
+	}
+
+	public Employee(Integer eno, Integer dno, String enm, String jb,Double sal) {
+		this.empNo = eno;
+		this.eName = enm;
+		this.job = jb;
+		this.salary = sal;
+		this.deptNo=dno;
+	}
+
+	public Integer getEmpNo() {
+		return empNo;
+	}
+
+	public void setEmpNo(Integer eno) {
+		this.empNo=eno;
+	}
+
+	public Integer getDeptNo() {
+		return deptNo;
+	}
+
+	public void setDeptNo(Integer dno) {
+		this.deptNo = dno;
+	}
+
+	public String getEName() {
+		return eName;
+	}
+
+	public void setEName(String enm) {
+		this.eName = enm;
+	}
+
+	public String getJob() {
+		return job;
+	}
+	public void setJob(String jb) {
+		this.job = jb;
+	}
+	
+	public Double getSalary() {
+		return salary;
+	}
+
+	public void setSalary(double sal) {
+		this.salary = sal;
+	}
+	
+	@Override
+	public String toString() {
+		return "Employee{" + "Emp No=" + empNo + ", deptNo=" + deptNo + ", EmpName='" + eName + '\'' + ", job='" + job
+				+ '\'' + '}';
+	}
+
+}
+
+=> 7. For fetching data from database we need to implement interface RowMapper. This interface has only one method mapRow(ResultSet resultSet, int i), which will return one instance of our model class (i.e. Person).
+
+package com.nkxgen.spring.jdbc.model;
+
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.springframework.jdbc.core.RowMapper;
+
+public class EmployeeMapper implements RowMapper<Employee> {
+
+	public Employee mapRow(ResultSet resultSet, int i) throws SQLException {
+
+		Employee emp = new Employee();
+		emp.setEmpNo(resultSet.getInt("empno"));
+		emp.setEName(resultSet.getString("ename"));
+		emp.setJob(resultSet.getString("job"));
+		emp.setSalary(resultSet.getDouble("sal"));
+		emp.setDeptNo(resultSet.getInt("deptno"));
+		return emp;
+	}
+}
+
+
+=> 8. Create Spring JDBC DAO Interface
+
+Final step is to create DAO classes to map our model class to database table using sql queries. We will also configure DataSource using @Autowired annotation and expose some APIs.
+
+package com.nkxgen.spring.jdbc.dao;
+
+import java.util.List;
+
+import com.nkxgen.spring.jdbc.model.Employee;
+
+public interface EmpDAO {
+	Employee getEmployeeByNo(Integer eno);
+
+	List<Employee> getAllEmployees();
+
+	boolean deleteEmployee(Employee e);
+
+	boolean updateEmployee(Employee e);
+
+	boolean createEmployee(Employee e);
+}
+
+
+=> 9. Create Spring JDBC DAO Implementation
+
+package com.nkxgen.spring.jdbc.dao;
+
+import java.util.List;
+
+import com.nkxgen.spring.jdbc.model.Employee;
+import com.nkxgen.spring.jdbc.model.EmployeeMapper;
+import java.util.List;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+
+public class EmpDAOImpl implements EmpDAO{
+	
+	JdbcTemplate jdbcTemplate;
+
+	private final String SQL_FIND_EMPLOYEE = "select * from emp where empno = ?";
+	private final String SQL_DELETE_EMPLOYEE = "delete from emp where empno = ?";
+	private final String SQL_UPDATE_EMPLOYEE = "update emp set ename = ?, job = ?, sal  = ?, deptno  = ? where empno = ?";
+	private final String SQL_GET_ALL = "select * from emp";
+	private final String SQL_INSERT_EMPLOYEE = "insert into emp(empno, ename, job, sal,deptno) values(?,?,?,?,?)";
+
+	@Autowired
+	public EmpDAOImpl(DataSource dataSource) {
+		jdbcTemplate = new JdbcTemplate(dataSource);
+	}
+
+
+	public Employee getEmployeeByNo(Integer eno) {
+		return jdbcTemplate.queryForObject(SQL_FIND_EMPLOYEE, new Object[] { eno }, new EmployeeMapper());
+	}
+
+	public List<Employee> getAllEmployees(){
+		return jdbcTemplate.query(SQL_GET_ALL, new EmployeeMapper());
+	}
+
+	public boolean deleteEmployee(Employee e) {
+		return jdbcTemplate.update(SQL_DELETE_EMPLOYEE, e.getEmpNo()) > 0;
+	}
+
+	public boolean updateEmployee(Employee e) {
+		return jdbcTemplate.update(SQL_UPDATE_EMPLOYEE, e.getEName(), e.getJob(), e.getSalary(),e.getDeptNo(),
+				e.getEmpNo()) > 0;
+	}
+
+	public boolean createEmployee(Employee e) {
+		return jdbcTemplate.update(SQL_INSERT_EMPLOYEE, e.getEmpNo(), e.getEName(), e.getJob(),
+				e.getSalary(),e.getDeptNo()) > 0;
+	}
+}
+
+EmpDAOImpl class is annotated with @Component annotation and in this class we have field with type JdbcTemplate. When constructor of this class will be invoked, an instance of DataSource will be injected into it and we can create an instance of JdbcTemplate. After that we can use in in our methods.
+
+=> 10. Create Controller
+
+package com.nkxgen.spring.jdbc;
+
+
+import java.text.DateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.nkxgen.spring.jdbc.dao.EmpDAO;
+import com.nkxgen.spring.jdbc.dao.EmpDAOImpl;
+import com.nkxgen.spring.jdbc.model.Employee;
+
+@Controller
+public class EmpController {
+	
+	EmpDAOImpl edao;
+	
+	@Autowired
+	public EmpController(EmpDAOImpl empdao) {
+		edao=empdao;
+	}
+
+	/**
+	 * selects the Add New Employee view to render by returning its name.
+	 */
+	@RequestMapping(value = "/emplist", method = RequestMethod.GET)
+	public String getAllEmployees(Model model) {
+		System.out.println("Employees List JSP Requested");
+
+		//get all employees from DAO
+		List<Employee> empList=edao.getAllEmployees();
+		
+		//set it to the model
+		model.addAttribute("elist",empList);
+		
+		//call the view
+		return "emplist";
+	}
+	
+	@RequestMapping(value = "/addnewemp", method = RequestMethod.GET)
+	public String addNewEmployee(Model model) {
+		System.out.println("Add New Emp JSP Requested");
+		return "newemp";
+	}
+
+	@RequestMapping(value = "/savenewemp", method = RequestMethod.POST)
+	public String saveNewEmployee(@Validated Employee emp, Model model) {
+		System.out.println("Save New Employee Page Requested");
+		//get all employees from DAO
+		boolean b=edao.createEmployee(emp);
+		
+		//set it to the model
+		if (b) {
+			model.addAttribute("emp",emp);
+		}
+		return "saveempsuccess";
+	}
+}
+
+=> 11. Create Input & Output JSPs
+
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+ <%@ page import="com.nkxgen.spring.jdbc.model.Employee,java.util.*" %>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Employees List through Spring JDBC Template</title>
+</head>
+ <BODY BGCOLOR="yellow">
+       <H1>Employees List through Spring JDBC Template </H1>
+
+      <TABLE BORDER="1">
+      <TR>
+      <TH>Emp No</TH>
+      <TH>Name</TH>
+      <TH>Job</TH>
+      <TH>Salary</TH>
+      <TH>Dept No</TH>
+      </TR>
+      <% 
+      	
+        List<Employee> elist=(List<Employee>)request.getAttribute("elist");
+		for(Employee e:elist){
+	  %>
+      	<TR>
+       		  <TD> <%= e.getEmpNo() %></td>
+     		  <TD> <%= e.getEName() %></TD>
+      		  <TD> <%= e.getJob() %></TD>
+     		  <TD> <%= e.getSalary() %></TD>
+     		  <TD> <%= e.getDeptNo() %></TD>
+      </TR>
+      <% 
+      	} 
+      %>
+     </TABLE>
+     </BODY>
+</html>
+
+
+

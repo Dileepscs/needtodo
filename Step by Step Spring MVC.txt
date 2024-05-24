@@ -1,0 +1,259 @@
+Spring MVC Step by Step
+	-11Sep2022
+
+
+=> Step 1 : Create Project
+
+“New -> Dynamic Web Project”
+
+
+=> Step 2 : Convert Dynamic Web Project to Maven Project
+
+Right click on the project and select “Configure -> Convert to Maven Project”
+
+=> Step 3: Add spring-web and spring-webmvc dependencies in pom.xml, also add servlet-api, jsp-api and jstl dependencies. 
+
+Final pom.xml file will be like below:
+
+<project xmlns="https://maven.apache.org/POM/4.0.0" xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.journaldev.spring.mvc</groupId>
+	<artifactId>spring-mvc-example</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>war</packaging>
+	<name>Spring MVC Example</name>
+	<description>Spring MVC Hello World Example</description>
+
+	<!-- Add Spring Web and MVC dependencies -->
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webmvc</artifactId>
+			<version>4.3.9.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-web</artifactId>
+			<version>4.3.9.RELEASE</version>
+		</dependency>
+		<!-- Servlet -->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<version>2.5</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>javax.servlet.jsp</groupId>
+			<artifactId>jsp-api</artifactId>
+			<version>2.1</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>jstl</artifactId>
+			<version>1.2</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.6.1</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-war-plugin</artifactId>
+				<version>3.0.0</version>
+				<configuration>
+					<warSourceDirectory>WebContent</warSourceDirectory>
+				</configuration>
+			</plugin>
+		</plugins>
+		<finalName>${project.artifactId}</finalName> <!-- added to remove Version from WAR file -->
+	</build>
+</project>
+
+
+=> Step 4: Add Spring MVC DispatcherServlet as Front Controller
+
+Configure DispatcherServlet in web.xml as shown below:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xmlns="https://java.sun.com/xml/ns/javaee" xsi:schemaLocation="https://java.sun.com/xml/ns/javaee https://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" id="WebApp_ID" version="3.0">
+  <display-name>spring-mvc-example</display-name>
+
+	<!-- Add Spring MVC DispatcherServlet as front controller -->
+	<servlet>
+        <servlet-name>spring</servlet-name>
+        <servlet-class>
+                org.springframework.web.servlet.DispatcherServlet
+        </servlet-class>
+        <init-param>
+       		<param-name>contextConfigLocation</param-name>
+       		<param-value>/WEB-INF/spring-servlet.xml</param-value>
+    	</init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+ 
+    <servlet-mapping>
+        <servlet-name>spring</servlet-name>
+        <url-pattern>/</url-pattern> 
+    </servlet-mapping>
+    
+ </web-app>
+
+
+Note:contextConfigLocation init-param is used to provide the location of spring bean configuration file.
+
+
+
+=> Step 5: Configure Spring MVC Bean Configuration File
+
+Create spring bean configuration file spring-servlet.xml as shown below:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans     
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/mvc 
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/context 
+        http://www.springframework.org/schema/context/spring-context.xsd">
+    <mvc:annotation-driven />
+    <context:component-scan
+        base-package="com.nkxgen.spring.mvc" />
+    <mvc:default-servlet-handler />
+    
+ <bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/views/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+</beans>
+
+Note : There are three important configurations. 
+
+1.annotation-driven tells DispatcherServlet to look for Controller classes using @Controller annotation.
+
+2.context:component-scan tells DispatcherServlet where to look for controller classes.
+
+3.InternalResourceViewResolver bean configuration to specify location of view pages and suffix used. Controller class methods return name of the view page and then suffix is added to figure out the view page to use for rendering the response.
+
+
+
+
+=> Step 6: Create MVC Controller class
+
+We have a single controller class to respond for two URIs - “/” for home page and “/user” for user page.
+
+package com.nkxgen.spring.mvc.controller;
+	
+import java.text.DateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.nkxgen.spring.mvc.model.User;
+
+@Controller
+public class HomeController {
+
+	/**
+	 * Simply selects the home view to render by returning its name.
+	 */
+	@RequestMapping(value = "/login", method = RequestMethod.GET)
+	public String home(Locale locale, Model model) {
+		System.out.println("Home Page Requested, locale = " + locale);
+		Date date = new Date();
+		DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, locale);
+
+		String formattedDate = dateFormat.format(date);
+
+		model.addAttribute("serverTime", formattedDate);
+
+		return "home";
+	}
+
+	@RequestMapping(value = "/user", method = RequestMethod.POST)
+	public String user(@Validated User user, Model model) {
+		System.out.println("User Page Requested");
+		model.addAttribute("userName", user.getUserName());
+		return "user";
+	}
+}
+
+=> Step 7: Create MVC Model Class
+
+
+Let us create a simple model class with a single variable and it’s getter-setter methods. It’s a simple POJO class.
+
+package com.nkxgen.spring.mvc.model;
+
+public class User {
+	private String userName;
+
+	public String getUserName() {
+		return userName;
+	}
+
+	public void setUserName(String userName) {
+		this.userName = userName;
+	}
+}
+
+=> Step 8: Let us create Spring MVC View Pages
+
+home.jsp
+
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib uri="https://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ page session="false"%>
+<html>
+<head>
+<title>Home</title>
+</head>
+<body>
+	<h1>Hello world!</h1>
+
+	<P>The time on the server is ${serverTime}.</p>
+
+	<form action="user" method="post">
+		<input type="text" name="userName"><br> <input
+			type="submit" value="Login">
+	</form>
+</body>
+</html>
+
+
+user.jsp
+
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "https://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>User Home Page</title>
+</head>
+<body>
+<h3>Hi ${userName}</h3>
+</body>
+</html>
+
+

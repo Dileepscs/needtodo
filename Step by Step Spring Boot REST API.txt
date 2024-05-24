@@ -1,0 +1,298 @@
+Step by Step Spring Boot API Application
+	-25Sep2022
+
+
+================Create Spring Boot Projet Using Spring initializr
+
+Step 1: Open the Spring initializr https://start.spring.io
+
+Step 2: Provide the Group and Artifact name. We have provided Group name com.nkxgen.spring.boot and Artifact spring-boot-example.
+
+Step 3: Now click on the Generate button.
+
+Step 4: Extract the RAR file.
+
+Step 5: Import the folder.
+
+File -> Import -> Existing Maven Project -> Next -> Browse -> Select the project -> Finish
+
+It takes some time to import the project. 
+
+-------------or------------
+================ Create Spring Boot Projet Using Spring STS
+
+We can also use Spring Tool Suite to create a Spring project. 
+
+Step 1: Open the Spring Tool Suite.
+
+Step 2: Click on the File menu -> New -> Maven Project
+
+Step 3: Select the maven-archetype-quickstart and click on the Next button.
+
+Step 4: Provide the Group Id and Artifact Id. We have provided Group Id com.nkxgen.spring.boot and Artifact Id spring-boot-example-sts1. Now click on the Finish button.
+
+Step 5: Check for proper  Java version inside the <properties> tag 
+
+<java.version>17</java.version> 
+
+================Further Steps after creating the project============================
+
+Step 6: Create Model Class
+
+
+package com.nkxgen.spring.boot.simpleboot.model;
+
+public class Employee {
+	private Integer empNo;
+	private Integer deptNo;
+	private String eName;
+	private String job;
+	private Double salary;
+	
+
+	public Employee() {
+	}
+
+	public Employee(Integer eno, Integer dno, String enm, String jb,Double sal) {
+		this.empNo = eno;
+		this.eName = enm;
+		this.job = jb;
+		this.salary = sal;
+		this.deptNo=dno;
+	}
+
+	public Integer getEmpNo() {
+		return empNo;
+	}
+
+	public void setEmpNo(Integer eno) {
+		this.empNo=eno;
+	}
+
+	public Integer getDeptNo() {
+		return deptNo;
+	}
+
+	public void setDeptNo(Integer dno) {
+		this.deptNo = dno;
+	}
+
+	public String getEName() {
+		return eName;
+	}
+
+	public void setEName(String enm) {
+		this.eName = enm;
+	}
+
+	public String getJob() {
+		return job;
+	}
+	public void setJob(String jb) {
+		this.job = jb;
+	}
+	
+	public Double getSalary() {
+		return salary;
+	}
+
+	public void setSalary(double sal) {
+		this.salary = sal;
+	}
+	
+	@Override
+	public String toString() {
+		return "Employee{" + "Emp No=" + empNo + ", deptNo=" + deptNo + ", EmpName='" + eName + '\'' + ", job='" + job
+				+ '\'' + '}';
+	}
+
+}
+
+=> Step 7: Creating Repository Interface
+
+To perform CRUD (Create, Read, Update, and Delete) operations on the User entities, you’ll need to have a UserRepository. To do this, you’ll have to use the CrudRepository extension and annotate the interface with @Repository.
+
+package com.nkxgen.spring.boot.simpleboot.contracts;
+
+import java.util.List;
+import com.nkxgen.spring.boot.simpleboot.model.*;
+
+public interface IEmpRepository {
+	public List<Employee> getAllEmployees(); 
+	public Employee getEmployeeByEmpNo(int eno);
+	public void addEmployee(Employee e);
+	public void deleteEmployee(int empno);
+	public void updateEmployee(Employee emp);
+}
+
+-------------------
+@Repository
+public interface EmployeeRepository extends CrudRepository<Employee, Long> {}
+
+=> Step 8: Creating Repository Class
+
+package com.nkxgen.spring.boot.simpleboot;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import com.nkxgen.spring.boot.simpleboot.contracts.IEmpRepository;
+import com.nkxgen.spring.boot.simpleboot.model.Employee;
+
+@Repository
+public class EmpRepository implements IEmpRepository {
+	private List<Employee> emplist;
+
+	@Override
+	public List<Employee> getAllEmployees(){
+		emplist=new ArrayList<Employee>();
+		
+		//Create some emmployees and add to the list
+		emplist.add(new Employee(1001,10, "Mahesh", "Manager", 19000.00));  
+		emplist.add(new Employee(1002,20, "Nareesh", "Developer", 12000.00));  
+		emplist.add(new Employee(1003,30, "Suresh", "Tester", 10000.00));  
+		emplist.add(new Employee(1004,10, "Rajesh", "DBA", 15000.00));  
+		emplist.add(new Employee(1005,20, "Sujesh", "admin", 10000.00));  
+		emplist.add(new Employee(1006,30, "Somesh", "HR", 7000.00)); 
+		
+		return emplist;
+	}
+	
+	public Employee getEmployeeByEmpNo(int eno) {
+		for(Employee e:emplist) {
+			if (e.getEmpNo()==eno)
+				return e;
+		}
+		return null;
+	}
+	
+	public void addEmployee(Employee e) {
+		emplist.add(e);
+	}
+	public void deleteEmployee(int empno) {
+		Employee emp=getEmployeeByEmpNo(empno);
+		emplist.remove(emp);
+	}
+	public void updateEmployee(Employee emp) {
+		deleteEmployee(emp.getEmpNo());
+		emplist.add(emp);
+	}
+} 
+
+
+Step 9: Create a Controller
+
+
+@RestController is a combination of @Controller and @ResponseBody.Create a EmployeeController as shown below.
+
+package com.nkxgen.spring.boot.simpleboot;
+import java.util.List;  
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.nkxgen.spring.boot.simpleboot.contracts.IEmpRepository;
+import com.nkxgen.spring.boot.simpleboot.model.Employee;  
+
+@RestController
+public class EmpController {
+
+	@Autowired  
+	private IEmpRepository emprepo;
+	
+	//mapping the getAllEmployees() method to /employees  
+	@GetMapping(value = "/employees")  
+	public List<Employee> getAllEmployees(){  
+		//finds all the products  
+		List<Employee> emps = emprepo.getAllEmployees();  
+		//returns the product list  
+		return emps;  
+	}  
+	
+	@RequestMapping(value = "/employees/{id}")
+	   public ResponseEntity<Object> getEmployeeByEmpNo(@PathVariable("id") int id) { 
+	      return new ResponseEntity<>(emprepo.getEmployeeByEmpNo(id), HttpStatus.OK);
+	   }
+	
+	@RequestMapping(value = "/employees/{id}", method = RequestMethod.DELETE)
+	   public ResponseEntity<Object> delete(@PathVariable("id") int id) { 
+	      emprepo.deleteEmployee(id);
+	      return new ResponseEntity<>("Employee is deleted successsfully", HttpStatus.OK);
+	   }
+	   
+	   @RequestMapping(value = "/employees/{id}", method = RequestMethod.PUT)
+	   public ResponseEntity<Object> updateEmployee(@PathVariable("id") int id, @RequestBody Employee emp) { 
+	      emprepo.updateEmployee(emp);
+	      return new ResponseEntity<>("Employee is updated successsfully", HttpStatus.OK);
+	   }
+	   
+	   @RequestMapping(value = "/employees", method = RequestMethod.POST)
+	   public ResponseEntity<Object> createEmployee(@RequestBody Employee emp) {
+	      emprepo.addEmployee(emp);
+	      return new ResponseEntity<>("Employee is created successfully", HttpStatus.CREATED);
+	   }
+	   
+	   @RequestMapping(value = "/emps")
+	   public ResponseEntity<Object> getEmployees() {
+	      return new ResponseEntity<>(emprepo.getAllEmployees(), HttpStatus.OK);
+	   }
+}  
+
+You’ve to @Autowired your EmployeeRepository for dependency injection. To specify the type of HTTP requests accepted, use the @GetMapping and @PostMapping annotations.
+
+
+Step 10: Generate War file
+
+We can create an executable JAR file, and run the spring boot application by using the 
+ Maven 
+
+application.properties
+
+spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+
+
+$ mvn clean install
+
+After “BUILD SUCCESS”, you can find the JAR file under the target directory.
+
+=> Step 11 : Deploye war file
+
+Copy the war file to webapps folder
+
+=> Step 12: Test the Spring Boot REST APIs
+
+Use your browser, curl, or Postman to test the endpoints.
+
+To send an HTTP GET request, go to http://localhost:8080/api/employees from your browser 
+
+Now, send an HTTP POST request to add specific employee
+
+$ curl --location --request POST 'http://localhost:8080/sprng-boot2/employees' --header 'Content-Type: application/json' --data-raw '{ "empNo": 1066, "eName": "sreedhar","job":"manager","salary":49999, "deptNo":30 }'
+
+=> Note Points:
+
+@GetMapping is a composed annotation that acts as a shortcut for @RequestMapping(method = RequestMethod.GET).
+
+@GetMapping is the newer annotaion. It supports consumes
+
+Consume options are :
+
+consumes = "text/plain"
+consumes = {"text/plain", "application/*"}
+
+For Further details see: GetMapping Annotation
+
+or read: request mapping variants
+
+RequestMapping supports consumes as well
+
+GetMapping we can apply only on method level and RequestMapping annotation we can apply on class level and as well as on method level
+
