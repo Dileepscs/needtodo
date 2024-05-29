@@ -1,0 +1,80 @@
+Using logback Framework with SFL4J
+	-28May2024
+
+logback is successor to log4j is a faster.
+
+To avoid direct dependency, its always recommended to use Simple Logging Facade for Java(SLF4J)
+
+Unlike logback, SLF4J (Simple Logging Facade for Java) is not an implementation of logging framework, it is an abstraction for all those logging frameworks in Java similar to logback 
+
+=> Step 1 : Add Maven dependencies
+
+pom.xml
+
+
+	<dependency>
+    		<groupId>org.springframework.boot</groupId>
+    		<artifactId>spring-boot-starter-logging</artifactId>
+	</dependency>
+
+	<dependency>
+    		<groupId>org.slf4j</groupId>
+    		<artifactId>slf4j-api</artifactId>
+	</dependency>
+
+	<dependency>
+    		<groupId>ch.qos.logback</groupId>
+    		<artifactId>logback-classic</artifactId>
+	</dependency>
+
+=> Step 2: Add Logging Configuration
+
+:: here is the sample xml file
+
+logback.xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    
+    <!-- Define file appender -->
+    <appender name="File" class="ch.qos.logback.core.FileAppender">
+        <file>logs/bootmrm.log</file> <!-- Specify the path and filename for the log file -->
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern> <!-- Define log message pattern -->
+        </encoder>
+    </appender>
+
+    <!-- Define root logger -->
+    <root level="INFO">
+        <appender-ref ref="File"/> <!-- Reference the file appender -->
+    </root>
+   
+   <!--  defining console logger
+    
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+    
+    -->
+
+</configuration>
+
+Note: We have added an appender with our pattern of writing the log in the configuration file and connected 
+as a child logger
+
+=> Include the logger in your controller/DAO/BLL/Utilities class with this code
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
+Logger logger = LoggerFactory.getLogger(<class name in which you are writing logger>);
+logger.info("Your Message -from log file!!");
+
+

@@ -1,0 +1,317 @@
+Step by Step Spring Boot MVC Application
+	-28Sep2024
+
+
+================Create Spring Boot Projet Using Spring initializr
+
+Step 1: Open the Spring initializr https://start.spring.io
+.
+Step 2: Provide the Group and Artifact name. We have provided Group name com.nkxgen.spring.boot.orm and Artifact spring-boot-mvc-orm.
+
+Step 3: Now click on the Generate button.
+
+Step 4: Extract the RAR file.
+
+Step 5: Import the folder.
+
+File -> Import -> Existing Maven Project -> Next -> Browse -> Select the project -> Finish
+
+It takes some time to import the project. 
+
+================Further Steps after creating the project
+
+Step 6: Create Entity model class
+
+package com.nkxgen.spring.boot.orm.models;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+import org.hibernate.annotations.Type;
+
+@Entity
+//@Table(name = "employee")
+public class Employee {
+	
+	@Id
+	@Column(name="empno")
+	private Integer empNo;
+	
+	@Column(name="deptno")
+	private Integer deptNo;
+	
+	@Column(name="ename")
+	private String eName;
+	
+	@Column(name="job")
+	private String job;
+		
+	public Employee() {
+	}
+
+	public Employee(Integer eno, Integer dno, String enm, String jb) {
+		this.empNo = eno;
+		this.eName = enm;
+		this.job = jb;
+		this.deptNo=dno;
+	}
+
+	public Integer getEmpNo() {
+		return empNo;
+	}
+
+	public void setEmpNo(Integer eno) {
+		this.empNo=eno;
+	}
+
+	public Integer getDeptNo() {
+		return deptNo;
+	}
+
+	public void setDeptNo(Integer dno) {
+		this.deptNo = dno;
+	}
+
+	public String getEName() {
+		return eName;
+	}
+
+	public void setEName(String enm) {
+		this.eName = enm;
+	}
+
+	public String getJob() {
+		return job;
+	}
+	public void setJob(String jb) {
+		this.job = jb;
+	}
+	
+	@Override
+	public String toString() {
+		return "Employee{" + "Emp No=" + empNo + ", deptNo=" + deptNo + ", EmpName='" + eName + '\'' + ", job='" + job
+				+ '\'' + '}';
+	}
+
+}
+
+=> Step 7: Creating Repository Interface inheriting JPARepository
+ 
+To perform CRUD (Create, Read, Update, and Delete) operations on the User entities, you’ll need to have a UserRepository. To do this, you’ll have to use the CrudRepository extension and annotate the interface with @Repository.
+
+package com.nkxgen.spring.boot.orm.repositories;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.nkxgen.spring.boot.orm.models.Employee;
+
+public interface EmpRepository extends JpaRepository<Employee, Integer> {
+}
+
+
+=> Step 8: Create Service class that invokes the Repository
+
+package com.nkxgen.spring.boot.orm.services;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.nkxgen.spring.boot.orm.repositories.EmpRepository;
+import com.nkxgen.spring.boot.orm.models.Employee;
+
+@Service
+public class EmpService {
+	
+	 @Autowired
+	 private EmpRepository empRepository;
+
+	  public List<Employee> findAll(){
+	        System.out.println("about to invoke repository method");
+	    	return empRepository.findAll();
+	    }
+}
+
+
+Step 9: Create a Controller
+
+
+package com.nkxgen.spring.boot.orm.controllers;
+
+
+import java.text.DateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.nkxgen.spring.boot.orm.models.Employee;
+import com.nkxgen.spring.boot.orm.services.EmpService;
+
+@Controller
+public class EmployeeController {
+	
+	EmpService empService;
+	
+	private static final Logger logger = LoggerFactory.getLogger(EmployeeController.class);
+
+	
+	@Autowired
+	public EmployeeController(EmpService es) {
+		empService=es;
+	}
+
+	/**
+	 * selects the employees list view to render by returning its name.
+	 */
+	@GetMapping(value = "/emplist")
+	public String getAllEmployees(Model model) {
+        logger.info("Handling /emplist request");
+
+		//get all employees from service
+        logger.info("about to invoke service method");
+        System.out.println("about to invoke service method");
+        
+		List<Employee> empList=empService.findAll();
+		
+        logger.info("Got emplist from service");
+        System.out.println("got emplist from service");
+        System.out.println(empList.toString());
+		
+		//set it to the model
+		model.addAttribute("elist",empList);
+		
+        logger.info("about to call logical view");
+        System.out.println("about to call logical view");
+        
+		//call the view
+		return "emplist";
+	}
+	
+	/*
+	
+	@RequestMapping(value = "/addnewemp", method = RequestMethod.GET)
+	public String addNewEmployee(Model model) {
+		System.out.println("Add New Emp JSP Requested");
+		return "newemp";
+	}
+
+	@RequestMapping(value = "/savenewemp", method = RequestMethod.POST)
+	public String saveNewEmployee(@Validated Employee emp, Model model) {
+		System.out.println("Save New Employee Page Requested");
+		//get all employees from DAO
+		boolean b=edao.createEmployee(emp);
+		
+		//set it to the model
+		if (b) {
+			model.addAttribute("emp",emp);
+		}
+		return "saveempsuccess";
+	}
+	*/
+}
+
+
+You’ve to @Autowired your EmpService for dependency injection. To specify the type of HTTP requests accepted, use the @GetMapping and @PostMapping annotations.
+
+
+Step 10: Configure the necessary parameters in application.properties (under resoruces)
+
+Note: Spring boot automatically reads the application.properties parameters without any explicit configuration
+
+spring.application.name=bootorm
+
+# --------Database Connection Properties-----------
+spring.datasource.url=jdbc:postgresql://localhost:5433/postgres
+spring.datasource.username=postgres
+spring.datasource.password=abc1234$
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+#------- Hibernate Properties----------
+
+# Hibernate dialect for PostgreSQL
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# DDL (Data Definition Language) mode (validate, update, create, create-drop)
+# Use 'update' for development to automatically update the database schema
+#hibernate.hbm2ddl.auto=validate
+#spring.jpa.hibernate.ddl-auto=update
+spring.jpa.hibernate.ddl-auto=validate
+
+# Show SQL in the console (useful for debugging)
+spring.jpa.show-sql=true
+
+# Format SQL in the console (improves readability)
+#spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.dialect.storage_engine = innodb
+
+
+#--------View resolver configurations or JSP Configurations---------
+spring.mvc.view.prefix=/WEB-INF/jsp/
+spring.mvc.view.suffix=.jsp
+
+
+Step 11: Add the necessary dependencies of JSP to pom.xml
+
+	  <dependency>
+        <groupId>org.apache.tomcat.embed</groupId>
+        <artifactId>tomcat-embed-jasper</artifactId>
+    </dependency>
+
+<!-- https://mvnrepository.com/artifact/javax.servlet.jsp/jsp-api -->
+<dependency>
+    <groupId>javax.servlet.jsp</groupId>
+    <artifactId>jsp-api</artifactId>
+    <version>2.2</version>
+    <scope>provided</scope>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/jstl/jstl -->
+<dependency>
+    <groupId>jstl</groupId>
+    <artifactId>jstl</artifactId>
+    <version>1.2</version>
+</dependency>
+
+
+<!--And also add postgresql dependency -->
+
+	<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.5.0</version>
+		</dependency>
+
+
+Step 12:Maven Build -clean install
+
+Step 13: Run on Server
+
+
+Spl Note:
+
+If your classes are in a package level that is other than application package level
+configure
+
+@ComponentScan(basePackages = "com.nkxgen.spring.boot.orm")
+
+Configure the below to map the repository interfaces for hibernate
+@EnableJpaRepositories(basePackages = "com.nkxgen.spring.boot.orm.repositories")
+
+If your entity classes are in a package level that is other than application package level
+configure
+@EntityScan(basePackages = "com.nkxgen.spring.boot.orm.models")
+
